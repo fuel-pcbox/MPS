@@ -14,6 +14,7 @@
 #ifndef MPS
 #define MPS
 
+#include <stdio.h>
 #include <gmp.h>
 #include <mpfr.h>
 
@@ -38,7 +39,7 @@ typedef struct
 	mpfr_t k;
 } __mps_quater;
 
-typedef __mps_quater mps_quater
+typedef __mps_quater mps_quater;
 
 typedef int mps_rndq_t;
 
@@ -370,62 +371,91 @@ typedef int mps_rndq_t;
 #define MPS_RNDDDDU RNDQ(GMP_RNDD,GMP_RNDD,GMP_RNDD,GMP_RNDU)
 #define MPS_RNDDDDD RNDQ(GMP_RNDD,GMP_RNDD,GMP_RNDD,GMP_RNDD)
 
-void mps_quater_init(mps_quater,mpfr_prec_t);
-void mps_quater_clear(mps_quater);
-void mps_quater_set(mps_quater,mps_quater,mps_rndq_t);
-void mps_quater_add(mps_quater,mps_quater,mps_quater,mps_rndq_t);
-void mps_s_q_mul(mps_quater,mpfr_t,mps_quater,mps_rndq_t);
-void mps_s_q_div(mps_quater,mpfr_t,mps_quater,mps_rndq_t);
-void mps_quater_conj(mps_quater,mps_quater,mps_rndq_t);
-void mps_quater_rec(mps_quater,mps_quater,mps_rndq_t);
-void mps_q_q_mul(mps_quater,mps_quater,mps_quater,mps_rndq_t);
-void mps_quater_norm(mpfr_t,mps_quater,mpfr_rnd_t);
-void mps_quater_sub(mps_quater,mps_quater,mps_quater,mps_rndq_t)
+void mps_quater_norm(mpfr_t c, mps_quater a, mpfr_rnd_t rnd)
+{
+	mpfr_t p;
+	mpfr_init2(p, mpfr_get_prec(a.re));
+
+	mpfr_sqr(c, a.re, rnd);
+	mpfr_sqr(p, a.i, rnd);
+	mpfr_add(c, p, c, rnd);
+	mpfr_sqr(p, a.j, rnd);
+	mpfr_add(c, p, c, rnd);
+	mpfr_sqr(p, a.k, rnd);
+	mpfr_add(c, p, c, rnd);
+	mpfr_sqrt(c, c, rnd);
+
+	mpfr_clear(p);
+}
+
+void mps_out_q_str(mps_quater a, FILE *stream, size_t n, mps_rndq_t rnd)
+{
+	mpfr_out_str(stream,10,n,a.re,MPS_RNDQ_RE(rnd));
+	mpfr_out_str(stream,10,n,a.i,MPS_RNDQ_I(rnd));
+	mpfr_out_str(stream,10,n,a.j,MPS_RNDQ_J(rnd));
+	mpfr_out_str(stream,10,n,a.k,MPS_RNDQ_K(rnd));
+}
+
+void mps_in_q_str(mps_quater a, FILE *stream, mps_rndq_t rnd)
+{
+	mpfr_inp_str(a.re,stream,10,MPS_RNDQ_RE(rnd));
+	mpfr_inp_str(a.i,stream,10,MPS_RNDQ_I(rnd));
+	mpfr_inp_str(a.j,stream,10,MPS_RNDQ_J(rnd));
+	mpfr_inp_str(a.k,stream,10,MPS_RNDQ_K(rnd));
+}
 
 void mps_quater_init(mps_quater a, mpfr_prec_t p)
 {
-	mpfr_init2(a->re,p);
-	mpfr_init2(a->i,p);
-	mpfr_init2(a->j,p);
-	mpfr_init2(a->k,p);
+	mpfr_init2(a.re,p);
+	mpfr_init2(a.i,p);
+	mpfr_init2(a.j,p);
+	mpfr_init2(a.k,p);
 }
 
 void mps_quater_clear(mps_quater a)
 {
-	mpfr_clear(a->re);
-	mpfr_clear(a->i);
-	mpfr_clear(a->j);
-	mpfr_clear(a->k);
+	mpfr_clear(a.re);
+	mpfr_clear(a.i);
+	mpfr_clear(a.j);
+	mpfr_clear(a.k);
 }
 
 //Set one quaternion to the other.
 
 void mps_quater_set(mps_quater a, mps_quater b, mps_rndq_t rnd)
 {
-	mpfr_set(a->re, b->re, MPS_RNDQ_RE(rnd));
-	mpfr_set(a->i, b->i, MPS_RNDQ_I(rnd));
-	mpfr_set(a->j, b->j, MPS_RNDQ_J(rnd));
-	mpfr_set(a->k, b->k, MPS_RNDQ_K(rnd));
+	mpfr_set(a.re, b.re, MPS_RNDQ_RE(rnd));
+	mpfr_set(a.i, b.i, MPS_RNDQ_I(rnd));
+	mpfr_set(a.j, b.j, MPS_RNDQ_J(rnd));
+	mpfr_set(a.k, b.k, MPS_RNDQ_K(rnd));
+}
+
+void mps_quater_set_d(mps_quater a, double b, double c, double d, double e, mps_rndq_t rnd)
+{
+	mpfr_set_d(a.re, b, MPS_RNDQ_RE(rnd));
+	mpfr_set_d(a.i, c, MPS_RNDQ_I(rnd));
+	mpfr_set_d(a.j, d, MPS_RNDQ_J(rnd));
+	mpfr_set_d(a.k, e, MPS_RNDQ_K(rnd));
 }
 
 //Adds two quaternions. Very straight-forward.
 
 void mps_quater_add(mps_quater a, mps_quater b, mps_quater c, mps_rndq_t rnd)
 {
-	mpfr_add(c->re, b->re, a->re, MPS_RNDQ_RE(rnd));
-	mpfr_add(c->i, b->i, a->i, MPS_RNDQ_I(rnd));
-	mpfr_add(c->j, b->j, a->j, MPS_RNDQ_J(rnd));
-	mpfr_add(c->k, b->k, a->k, MPS_RNDQ_K(rnd));
+	mpfr_add(c.re, b.re, a.re, MPS_RNDQ_RE(rnd));
+	mpfr_add(c.i, b.i, a.i, MPS_RNDQ_I(rnd));
+	mpfr_add(c.j, b.j, a.j, MPS_RNDQ_J(rnd));
+	mpfr_add(c.k, b.k, a.k, MPS_RNDQ_K(rnd));
 }
 
 //Scalar-Quaternion multiplication, or scaling a vector.
 
 void mps_s_q_mul(mps_quater a, mpfr_t b, mps_quater c, mps_rndq_t rnd)
 {
-	mpfr_mul(c->re, b, a->re, MPS_RNDQ_RE(rnd));
-	mpfr_mul(c->i, b, a->i, MPS_RNDQ_I(rnd));
-	mpfr_mul(c->j, b, a->j, MPS_RNDQ_J(rnd));
-	mpfr_mul(c->k, b, a->k, MPS_RNDQ_K(rnd));
+	mpfr_mul(c.re, b, a.re, MPS_RNDQ_RE(rnd));
+	mpfr_mul(c.i, b, a.i, MPS_RNDQ_I(rnd));
+	mpfr_mul(c.j, b, a.j, MPS_RNDQ_J(rnd));
+	mpfr_mul(c.k, b, a.k, MPS_RNDQ_K(rnd));
 }
 
 void mps_s_q_div(mps_quater a, mpfr_t b, mps_quater c, mps_rndq_t rnd)
@@ -438,16 +468,16 @@ void mps_s_q_div(mps_quater a, mpfr_t b, mps_quater c, mps_rndq_t rnd)
 
 void mps_quater_conj(mps_quater a, mps_quater b, mps_rndq_t rnd)
 {
-	mpfr_set(b->re, a->re, MPS_RNDQ_RE(rnd))
-	mpfr_neg(b->i, a->i, MPS_RNDQ_I(rnd));
-	mpfr_neg(b->j, a->j, MPS_RNDQ_J(rnd));
-	mpfr_neg(b->k, a->k, MPS_RNDQ_K(rnd));
+	mpfr_set(b.re, a.re, MPS_RNDQ_RE(rnd));
+	mpfr_neg(b.i, a.i, MPS_RNDQ_I(rnd));
+	mpfr_neg(b.j, a.j, MPS_RNDQ_J(rnd));
+	mpfr_neg(b.k, a.k, MPS_RNDQ_K(rnd));
 }
 
 void mps_quater_rec(mps_quater a, mps_quater b, mps_rndq_t rnd)
 {
 	mpfr_t p;
-	mpfr_init2(p, mpfr_get_prec(a->re));
+	mpfr_init2(p, mpfr_get_prec(a.re));
 
 	mps_quater_norm(p, b, MPS_RNDQ_RE(rnd));
 	mpfr_d_div(p, 1.0, p, MPS_RNDQ_RE(rnd));
@@ -463,71 +493,52 @@ void mps_quater_rec(mps_quater a, mps_quater b, mps_rndq_t rnd)
 void mps_q_q_mul(mps_quater a, mps_quater b, mps_quater c, mps_rndq_t rnd)
 {
 	mpfr_t p;
-	mpfr_init2(p, mpfr_get_prec(a->re));
+	mpfr_init2(p, mpfr_get_prec(a.re));
 
-	mpfr_mul(c->re, a->re, b->re, MPS_RNDQ_RE(rnd));
-	mpfr_mul(p, a->i, b->i, MPS_RNDQ_RE(rnd))
-	mpfr_sub(c->re, c->re, p, MPS_RNDQ_RE(rnd));
-	mpfr_mul(p, a->j, b->j, MPS_RNDQ_RE(rnd))
-	mpfr_sub(c->re, c->re, p, MPS_RNDQ_RE(rnd));
-	mpfr_mul(p, a->k, b->k, MPS_RNDQ_RE(rnd))
-	mpfr_sub(c->re, c->re, p, MPS_RNDQ_RE(rnd));
+	mpfr_mul(c.re, a.re, b.re, MPS_RNDQ_RE(rnd));
+	mpfr_mul(p, a.i, b.i, MPS_RNDQ_RE(rnd));
+	mpfr_sub(c.re, c.re, p, MPS_RNDQ_RE(rnd));
+	mpfr_mul(p, a.j, b.j, MPS_RNDQ_RE(rnd));
+	mpfr_sub(c.re, c.re, p, MPS_RNDQ_RE(rnd));
+	mpfr_mul(p, a.k, b.k, MPS_RNDQ_RE(rnd));
+	mpfr_sub(c.re, c.re, p, MPS_RNDQ_RE(rnd));
 
-	mpfr_mul(c->i, a->re, b->i, MPS_RNDQ_I(rnd));
-	mpfr_mul(p, a->i, b->re, MPS_RNDQ_I(rnd))
-	mpfr_add(c->i, p, c->i, MPS_RNDQ_I(rnd));
-	mpfr_mul(p, a->j, b->k, MPS_RNDQ_I(rnd))
-	mpfr_add(c->i, p, c->i, MPS_RNDQ_I(rnd));
-	mpfr_mul(p, a->k, b->j, MPS_RNDQ_I(rnd))
-	mpfr_sub(c->i, c->i, p, MPS_RNDQ_I(rnd));
+	mpfr_mul(c.i, a.re, b.i, MPS_RNDQ_I(rnd));
+	mpfr_mul(p, a.i, b.re, MPS_RNDQ_I(rnd));
+	mpfr_add(c.i, p, c.i, MPS_RNDQ_I(rnd));
+	mpfr_mul(p, a.j, b.k, MPS_RNDQ_I(rnd));
+	mpfr_add(c.i, p, c.i, MPS_RNDQ_I(rnd));
+	mpfr_mul(p, a.k, b.j, MPS_RNDQ_I(rnd));
+	mpfr_sub(c.i, c.i, p, MPS_RNDQ_I(rnd));
 
-	mpfr_mul(c->j, a->re, b->i, MPS_RNDQ_J(rnd));
-	mpfr_mul(p, a->i, b->re, MPS_RNDQ_J(rnd))
-	mpfr_sub(c->j, c->j, p, MPS_RNDQ_J(rnd));
-	mpfr_mul(p, a->j, b->k, MPS_RNDQ_J(rnd))
-	mpfr_add(c->j, p, c->j, MPS_RNDQ_J(rnd));
-	mpfr_mul(p, a->k, b->j, MPS_RNDQ_J(rnd))
-	mpfr_add(c->j, p, c->j, MPS_RNDQ_J(rnd));
+	mpfr_mul(c.j, a.re, b.i, MPS_RNDQ_J(rnd));
+	mpfr_mul(p, a.i, b.re, MPS_RNDQ_J(rnd));
+	mpfr_sub(c.j, c.j, p, MPS_RNDQ_J(rnd));
+	mpfr_mul(p, a.j, b.k, MPS_RNDQ_J(rnd));
+	mpfr_add(c.j, p, c.j, MPS_RNDQ_J(rnd));
+	mpfr_mul(p, a.k, b.j, MPS_RNDQ_J(rnd));
+	mpfr_add(c.j, p, c.j, MPS_RNDQ_J(rnd));
 
-	mpfr_mul(c->k, a->re, b->k, MPS_RNDQ_K(rnd));
-	mpfr_mul(p, a->i, b->j, MPS_RNDQ_K(rnd))
-	mpfr_add(c->k, p, c->k, MPS_RNDQ_K(rnd));
-	mpfr_mul(p, a->j, b->k, MPS_RNDQ_K(rnd))
-	mpfr_sub(c->k, c->k, p, MPS_RNDQ_K(rnd));
-	mpfr_mul(p, a->k, b->re, MPS_RNDQ_K(rnd))
-	mpfr_add(c->k, p, c->k, MPS_RNDQ_K(rnd));
-
-	mpfr_clear(p);
-
-}
-
-//Computes the norm.
-
-void mps_quater_norm(mpfr_t c, mps_quater a, mpfr_rnd_t rnd)
-{
-	mpfr_t p;
-	mpfr_set_d(p, mpfr_get_prec(a->re));
-
-	mpfr_sqr(c, a->re, rnd);
-	mpfr_sqr(p, a->i, rnd);
-	mpfr_add(c, p, c, rnd);
-	mpfr_sqr(p, a->j, rnd);
-	mpfr_add(c, p, c, rnd);
-	mpfr_sqr(p, a->k, rnd);
-	mpfr_add(c, p, c, rnd);
-	mpfr_sqrt(c, c, rnd);
+	mpfr_mul(c.k, a.re, b.k, MPS_RNDQ_K(rnd));
+	mpfr_mul(p, a.i, b.j, MPS_RNDQ_K(rnd));
+	mpfr_add(c.k, p, c.k, MPS_RNDQ_K(rnd));
+	mpfr_mul(p, a.j, b.k, MPS_RNDQ_K(rnd));
+	mpfr_sub(c.k, c.k, p, MPS_RNDQ_K(rnd));
+	mpfr_mul(p, a.k, b.re, MPS_RNDQ_K(rnd));
+	mpfr_add(c.k, p, c.k, MPS_RNDQ_K(rnd));
 
 	mpfr_clear(p);
+
 }
 
 //Identical to addition, except different function names.
 
 void mps_quater_sub(mps_quater a, mps_quater b, mps_quater c, mps_rndq_t rnd)
 {
-	mpfr_sub(c->re, a->re, b->re, MPS_RNDQ_RE(rnd));
-	mpfr_sub(c->i, a->i, b->i, MPS_RNDQ_I(rnd));
-	mpfr_sub(c->j, a->j, b->j, MPS_RNDQ_J(rnd));
-	mpfr_sub(c->k, a->k, b->k, MPS_RNDQ_K(rnd));
+	mpfr_sub(c.re, a.re, b.re, MPS_RNDQ_RE(rnd));
+	mpfr_sub(c.i, a.i, b.i, MPS_RNDQ_I(rnd));
+	mpfr_sub(c.j, a.j, b.j, MPS_RNDQ_J(rnd));
+	mpfr_sub(c.k, a.k, b.k, MPS_RNDQ_K(rnd));
 }
 
 #endif //MPS header guard
